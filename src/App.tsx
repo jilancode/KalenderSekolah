@@ -5,6 +5,8 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // Types
 export type CategoryKey = 'holiday' | 'school' | 'teacher' | 'important';
@@ -51,6 +53,10 @@ export interface AppData {
 
 // Storage Key
 const STORAGE_KEY = 'KALDIK_APP_DATA_V1';
+
+// Base64 Clean SVGs for instant canvas rendering (prevents html2canvas hanging)
+const DEFAULT_LOGO_LEFT = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTIwIiB3aWR0aD0iODAiIGhlaWdodD0iOTYiPjxwYXRoIGQ9Ik01MCA1IEw5MCAyNSBWNjUgQzkwIDkwIDUwIDExNSA1MCAxMTUgQzUwIDExNSAxMCA5MCAxMCA2NSBWMjUgWiIgZmlsbD0iIzFlM2E4YSIgc3Ryb2tlPSIjZmJmYjI0IiBzdHJva2Utd2lkdGg9IjQiLz48cG9seWdvbiBwb2ludHM9IjUwLDI1IDU3LDQwIDczLDQwIDYwLDUwIDY1LDY2IDUwLDU1IDM1LDY2IDQwLDUwIDI3LDQwIDQzLDQwIiBmaWxsPSIjZmJmYjI0Ii8+PHBhdGggZD0iTTI1IDgwIEM0MCA5NSA2MCA5NSA3NSA4MCIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjMiIGZpbGw9Im5vbmUiLz48L3N2Zz4=";
+const DEFAULT_LOGO_RIGHT = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiB3aWR0aD0iODAiIGhlaWdodD0iODAiPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjQ1IiBmaWxsPSIjMjU2M2ViIiBzdHJva2U9IiMxZDRlZDgiIHN0cm9rZS13aWR0aD0iMyIvPjxwYXRoIGQ9Ik0yNSA2MCBRNTAgNDUgNzUgNjAgVjcwIFE1MCA1NSAyNSA3MCBaIiBmaWxsPSIjZmZmZmZmIi8+PHBhdGggZD0iTTUwIDM1IEw3NSA0OCBMNTAgNjAgTDI1IDQ4IFoiIGZpbGw9IiNmYmJmMjQiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjI4IiByPSI2IiBmaWxsPSIjZmJmYjI0Ii8+PC9zdmc+";
 
 // Category Definitions
 export const CATEGORIES: Record<CategoryKey, {
@@ -117,8 +123,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   developerName: "Panitia Kalender Pendidikan",
   developerNIP: "",
   signDate: "",
-  logoLeft: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' width='80' height='96'><path d='M50 5 L90 25 V65 C90 90 50 115 50 115 C50 115 10 90 10 65 V25 Z' fill='%231e3a8a' stroke='%23fbbf24' stroke-width='4'/><polygon points='50,25 57,40 73,40 60,50 65,66 50,55 35,66 40,50 27,40 43,40' fill='%23fbbf24'/><path d='M25 80 C40 95 60 95 75 80' stroke='%23ffffff' stroke-width='3' fill='none'/></svg>",
-  logoRight: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='80' height='80'><circle cx='50' cy='50' r='45' fill='%232563eb' stroke='%231d4ed8' stroke-width='3'/><path d='M25 60 Q50 45 75 60 V70 Q50 55 25 70 Z' fill='%23ffffff'/><path d='M50 35 L75 48 L50 60 L25 48 Z' fill='%23fbbf24'/><circle cx='50' cy='28' r='6' fill='%23fbbf24'/></svg>"
+  logoLeft: DEFAULT_LOGO_LEFT,
+  logoRight: DEFAULT_LOGO_RIGHT
 };
 
 // Demo Events
@@ -217,8 +223,17 @@ export default function App() {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
+        let logoLeft = parsed.settings?.logoLeft;
+        let logoRight = parsed.settings?.logoRight;
+        if (!logoLeft || logoLeft.includes('utf8') || logoLeft.includes('<svg')) {
+          logoLeft = DEFAULT_LOGO_LEFT;
+        }
+        if (!logoRight || logoRight.includes('utf8') || logoRight.includes('<svg')) {
+          logoRight = DEFAULT_LOGO_RIGHT;
+        }
+
         return {
-          settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
+          settings: { ...DEFAULT_SETTINGS, ...parsed.settings, logoLeft, logoRight },
           events: parsed.events || [...DEMO_EVENTS],
           hebOverrides: parsed.hebOverrides || {}
         };
@@ -277,6 +292,7 @@ export default function App() {
   const [selectedDateStr, setSelectedDateStr] = useState<string>('');
 
   const [printModalOpen, setPrintModalOpen] = useState<boolean>(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState<boolean>(false);
   const [printType, setPrintType] = useState<'cal-sem1' | 'cal-sem2' | 'cal-annual' | 'rekap' | 'heb'>('cal-sem1');
   const [printPaperSize, setPrintPaperSize] = useState<'a4' | 'f4'>('a4');
   const [printOrientation, setPrintOrientation] = useState<'landscape' | 'portrait'>('landscape');
@@ -652,32 +668,77 @@ export default function App() {
     });
   };
 
-  // PDF Download handler
-  const downloadPDFDocument = () => {
+  // Fast and robust PDF Download handler using bundled jsPDF + html2canvas
+  const downloadPDFDocument = async () => {
     const element = document.getElementById('print-area');
-    if (!element) return;
-
-    const html2pdf = (window as any).html2pdf;
-    if (typeof html2pdf === 'undefined') {
-      showToast('Fitur unduh PDF menggunakan dialog cetak browser (Pilih "Save as PDF")', 'info');
-      window.print();
+    if (!element) {
+      showToast('Area dokumen tidak ditemukan', 'error');
       return;
     }
 
-    const opt = {
-      margin: 10,
-      filename: `KALDIK_${appData.settings.academicYear.replace('/', '-')}_${printType}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: printPaperSize === 'f4' ? [215.9, 330] : 'a4', orientation: printOrientation }
-    };
+    setIsGeneratingPDF(true);
+    showToast('Sedang memproses berkas PDF...', 'info');
 
-    showToast('Memproses berkas PDF...', 'info');
-    html2pdf().set(opt).from(element).save().then(() => {
+    try {
+      // Capture canvas with optimized settings (no hanging on external assets)
+      const canvas = await html2canvas(element, {
+        scale: 1.5,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        imageTimeout: 4000,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const isLandscape = printOrientation === 'landscape';
+      const isF4 = printPaperSize === 'f4';
+
+      // Width and Height in mm
+      // A4: 210 x 297 mm, F4: 215 x 330 mm
+      const paperWidth = isF4 ? (isLandscape ? 330 : 215) : (isLandscape ? 297 : 210);
+      const paperHeight = isF4 ? (isLandscape ? 215 : 330) : (isLandscape ? 210 : 297);
+
+      const pdf = new jsPDF({
+        orientation: isLandscape ? 'landscape' : 'portrait',
+        unit: 'mm',
+        format: isF4 ? [215, 330] : 'a4'
+      });
+
+      const margin = 8;
+      const printableWidth = paperWidth - (margin * 2);
+      const printableHeight = paperHeight - (margin * 2);
+      const imgHeight = (canvas.height * printableWidth) / canvas.width;
+
+      if (imgHeight <= printableHeight) {
+        // Fits on single page
+        pdf.addImage(imgData, 'JPEG', margin, margin, printableWidth, imgHeight);
+      } else {
+        // Multi-page slicing
+        let heightLeft = imgHeight;
+        let position = margin;
+        let page = 1;
+
+        while (heightLeft > 0) {
+          if (page > 1) {
+            pdf.addPage();
+          }
+          pdf.addImage(imgData, 'JPEG', margin, position, printableWidth, imgHeight);
+          heightLeft -= printableHeight;
+          position -= printableHeight;
+          page++;
+        }
+      }
+
+      pdf.save(`KALDIK_${appData.settings.academicYear.replace('/', '-')}_${printType}.pdf`);
       showToast('PDF berhasil diunduh!', 'success');
-    }).catch(() => {
+    } catch (err) {
+      console.error('PDF Generation Error:', err);
+      showToast('Gagal memproses via canvas, membuka dialog cetak browser...', 'error');
       window.print();
-    });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   // Filtered Rekap List
@@ -2582,10 +2643,10 @@ export default function App() {
 
       {/* 3. PRINT & PDF MODAL */}
       {printModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden">
+        <div className="print-modal-overlay fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="print-modal-wrapper bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden">
             {/* Header Bar */}
-            <div className="bg-slate-900 text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+            <div className="print-header-controls bg-slate-900 text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <i className="fa-solid fa-print text-indigo-400 text-lg"></i>
                 <div>
@@ -2630,15 +2691,33 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={downloadPDFDocument}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  disabled={isGeneratingPDF}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    isGeneratingPDF
+                      ? 'bg-emerald-800 text-emerald-200 cursor-not-allowed opacity-80'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
+                  title="Unduh langsung sebagai berkas PDF (.pdf)"
                 >
-                  <i className="fa-solid fa-file-pdf"></i> Unduh PDF
+                  {isGeneratingPDF ? (
+                    <>
+                      <i className="fa-solid fa-circle-notch fa-spin"></i>
+                      <span>Mengunduh...</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-file-pdf"></i>
+                      <span>Unduh PDF</span>
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => window.print()}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  title="Cetak langsung atau simpan sebagai PDF via dialog browser"
                 >
-                  <i className="fa-solid fa-print"></i> Cetak
+                  <i className="fa-solid fa-print"></i>
+                  <span>Cetak</span>
                 </button>
                 <button
                   onClick={() => setPrintModalOpen(false)}
@@ -2650,7 +2729,7 @@ export default function App() {
             </div>
 
             {/* Document Preview */}
-            <div className="flex-1 bg-slate-200 p-4 overflow-y-auto flex justify-center">
+            <div className="print-modal-body flex-1 bg-slate-200 p-4 overflow-y-auto flex justify-center">
               <div
                 id="print-area"
                 style={{ maxWidth: printOrientation === 'landscape' ? '1050px' : '800px' }}
