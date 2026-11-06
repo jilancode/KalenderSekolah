@@ -1,0 +1,6 @@
+{
+  "name": "Kalender Pendidikan Sekolah",
+  "description": "Aplikasi Kalender Pendidikan (Kaldik) Sekolah Dasar interaktif dengan manajemen agenda, libur nasional, hari efektif belajar (HEB), serta ekspor Excel dan cetak PDF.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
