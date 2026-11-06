@@ -127,22 +127,219 @@ const DEFAULT_SETTINGS: AppSettings = {
   logoRight: DEFAULT_LOGO_RIGHT
 };
 
-// Demo Events
+// Comprehensive Indonesian National Holidays Database & Generator by Year
+export interface HolidayDefinition {
+  title: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+}
+
+// Fixed-date national holidays
+export function getFixedHolidays(year: number): HolidayDefinition[] {
+  return [
+    { title: `Tahun Baru ${year} Masehi`, startDate: `${year}-01-01`, endDate: `${year}-01-01`, description: 'Tahun Baru Masehi' },
+    { title: 'Hari Buruh Internasional', startDate: `${year}-05-01`, endDate: `${year}-05-01`, description: 'Hari Buruh Internasional (May Day)' },
+    { title: 'Hari Lahir Pancasila', startDate: `${year}-06-01`, endDate: `${year}-06-01`, description: 'Hari Lahir Pancasila' },
+    { title: `HUT Proklamasi Kemerdekaan RI ke-${year - 1945}`, startDate: `${year}-08-17`, endDate: `${year}-08-17`, description: 'Hari Kemerdekaan Republik Indonesia' },
+    { title: 'Hari Raya Natal', startDate: `${year}-12-25`, endDate: `${year}-12-25`, description: 'Hari Raya Natal' },
+    { title: 'Cuti Bersama Hari Raya Natal', startDate: `${year}-12-26`, endDate: `${year}-12-26`, description: 'Cuti Bersama Natal' },
+  ];
+}
+
+// Variable Islamic, Lunar, Saka, and Christian Holidays based on Indonesian Government Decrees (SKB 3 Menteri)
+export const VARIABLE_HOLIDAYS_BY_YEAR: Record<number, HolidayDefinition[]> = {
+  2023: [
+    { title: 'Tahun Baru Imlek 2574 Kongzili', startDate: '2023-01-22', endDate: '2023-01-22', description: 'Tahun Baru Imlek' },
+    { title: 'Isra Mikraj Nabi Muhammad SAW', startDate: '2023-02-18', endDate: '2023-02-18', description: 'Hari Besar Keagamaan Islam' },
+    { title: 'Hari Suci Nyepi (Tahun Baru Saka 1945)', startDate: '2023-03-22', endDate: '2023-03-22', description: 'Hari Suci Nyepi' },
+    { title: 'Wafat Isa Almasih', startDate: '2023-04-07', endDate: '2023-04-07', description: 'Wafat Yesus Kristus' },
+    { title: 'Hari Raya Idul Fitri 1444 H', startDate: '2023-04-22', endDate: '2023-04-23', description: 'Libur Nasional Idul Fitri 1444 H' },
+    { title: 'Kenaikan Isa Almasih', startDate: '2023-05-18', endDate: '2023-05-18', description: 'Kenaikan Yesus Kristus' },
+    { title: 'Hari Raya Waisak 2567 BE', startDate: '2023-06-04', endDate: '2023-06-04', description: 'Hari Raya Waisak' },
+    { title: 'Hari Raya Idul Adha 1444 H', startDate: '2023-06-29', endDate: '2023-06-29', description: 'Hari Raya Kurban Idul Adha' },
+    { title: 'Tahun Baru Islam 1445 H', startDate: '2023-07-19', endDate: '2023-07-19', description: '1 Muharram 1445 H' },
+    { title: 'Maulid Nabi Muhammad SAW', startDate: '2023-09-28', endDate: '2023-09-28', description: 'Peringatan Maulid Nabi SAW' },
+  ],
+  2024: [
+    { title: 'Isra Mikraj Nabi Muhammad SAW', startDate: '2024-02-08', endDate: '2024-02-08', description: 'Hari Besar Keagamaan Islam' },
+    { title: 'Tahun Baru Imlek 2575 Kongzili', startDate: '2024-02-10', endDate: '2024-02-10', description: 'Tahun Baru Imlek 2575' },
+    { title: 'Hari Suci Nyepi (Tahun Baru Saka 1946)', startDate: '2024-03-11', endDate: '2024-03-11', description: 'Hari Suci Nyepi' },
+    { title: 'Wafat Isa Almasih', startDate: '2024-03-29', endDate: '2024-03-29', description: 'Wafat Yesus Kristus (Jumat Agung)' },
+    { title: 'Hari Paskah', startDate: '2024-03-31', endDate: '2024-03-31', description: 'Kebangkitan Yesus Kristus' },
+    { title: 'Hari Raya Idul Fitri 1445 H', startDate: '2024-04-10', endDate: '2024-04-11', description: 'Libur Nasional Idul Fitri 1445 H' },
+    { title: 'Kenaikan Isa Almasih', startDate: '2024-05-09', endDate: '2024-05-09', description: 'Kenaikan Yesus Kristus' },
+    { title: 'Hari Raya Waisak 2568 BE', startDate: '2024-05-23', endDate: '2024-05-23', description: 'Hari Raya Tri Suci Waisak' },
+    { title: 'Hari Raya Idul Adha 1445 H', startDate: '2024-06-17', endDate: '2024-06-17', description: 'Hari Raya Idul Adha 1445 H' },
+    { title: 'Tahun Baru Islam 1446 H', startDate: '2024-07-07', endDate: '2024-07-07', description: '1 Muharram 1446 H' },
+    { title: 'Maulid Nabi Muhammad SAW', startDate: '2024-09-16', endDate: '2024-09-16', description: 'Peringatan Maulid Nabi SAW' },
+  ],
+  2025: [
+    { title: 'Isra Mikraj Nabi Muhammad SAW', startDate: '2025-01-27', endDate: '2025-01-27', description: 'Hari Besar Keagamaan Islam' },
+    { title: 'Tahun Baru Imlek 2576 Kongzili', startDate: '2025-01-29', endDate: '2025-01-29', description: 'Tahun Baru Imlek 2576' },
+    { title: 'Hari Suci Nyepi (Tahun Baru Saka 1947)', startDate: '2025-03-29', endDate: '2025-03-29', description: 'Hari Suci Nyepi Saka 1947' },
+    { title: 'Hari Raya Idul Fitri 1446 H', startDate: '2025-03-31', endDate: '2025-04-01', description: 'Libur Nasional Idul Fitri 1446 H' },
+    { title: 'Wafat Yesus Kristus', startDate: '2025-04-18', endDate: '2025-04-18', description: 'Jumat Agung Wafat Yesus Kristus' },
+    { title: 'Hari Raya Waisak 2569 BE', startDate: '2025-05-12', endDate: '2025-05-12', description: 'Hari Raya Tri Suci Waisak' },
+    { title: 'Kenaikan Yesus Kristus', startDate: '2025-05-29', endDate: '2025-05-29', description: 'Kenaikan Yesus Kristus' },
+    { title: 'Hari Raya Idul Adha 1446 H', startDate: '2025-06-07', endDate: '2025-06-07', description: 'Hari Raya Kurban Idul Adha 1446 H' },
+    { title: 'Tahun Baru Islam 1447 H', startDate: '2025-06-27', endDate: '2025-06-27', description: '1 Muharram 1447 H' },
+    { title: 'Maulid Nabi Muhammad SAW', startDate: '2025-09-05', endDate: '2025-09-05', description: 'Peringatan Maulid Nabi Muhammad SAW' },
+  ],
+  2026: [
+    { title: 'Isra Mikraj Nabi Muhammad SAW', startDate: '2026-01-16', endDate: '2026-01-16', description: 'Hari Besar Keagamaan Islam' },
+    { title: 'Tahun Baru Imlek 2577 Kongzili', startDate: '2026-02-17', endDate: '2026-02-17', description: 'Tahun Baru Imlek 2577' },
+    { title: 'Hari Suci Nyepi (Tahun Baru Saka 1948)', startDate: '2026-03-19', endDate: '2026-03-19', description: 'Hari Suci Nyepi Saka 1948' },
+    { title: 'Hari Raya Idul Fitri 1447 H', startDate: '2026-03-20', endDate: '2026-03-21', description: 'Libur Nasional Idul Fitri 1447 H' },
+    { title: 'Wafat Yesus Kristus', startDate: '2026-04-03', endDate: '2026-04-03', description: 'Jumat Agung Wafat Yesus Kristus' },
+    { title: 'Kenaikan Yesus Kristus', startDate: '2026-05-14', endDate: '2026-05-14', description: 'Kenaikan Yesus Kristus' },
+    { title: 'Hari Raya Idul Adha 1447 H', startDate: '2026-05-27', endDate: '2026-05-27', description: 'Hari Raya Kurban Idul Adha 1447 H' },
+    { title: 'Hari Raya Waisak 2570 BE', startDate: '2026-05-31', endDate: '2026-05-31', description: 'Hari Raya Tri Suci Waisak' },
+    { title: 'Tahun Baru Islam 1448 H', startDate: '2026-06-16', endDate: '2026-06-16', description: '1 Muharram 1448 H' },
+    { title: 'Maulid Nabi Muhammad SAW', startDate: '2026-08-25', endDate: '2026-08-25', description: 'Peringatan Maulid Nabi Muhammad SAW' },
+  ],
+  2027: [
+    { title: 'Isra Mikraj Nabi Muhammad SAW', startDate: '2027-01-06', endDate: '2027-01-06', description: 'Hari Besar Keagamaan Islam' },
+    { title: 'Tahun Baru Imlek 2578 Kongzili', startDate: '2027-02-06', endDate: '2027-02-06', description: 'Tahun Baru Imlek 2578' },
+    { title: 'Hari Raya Idul Fitri 1448 H', startDate: '2027-03-09', endDate: '2027-03-10', description: 'Libur Nasional Idul Fitri 1448 H' },
+    { title: 'Wafat Yesus Kristus', startDate: '2027-03-26', endDate: '2027-03-26', description: 'Jumat Agung Wafat Yesus Kristus' },
+    { title: 'Hari Suci Nyepi (Tahun Baru Saka 1949)', startDate: '2027-04-07', endDate: '2027-04-07', description: 'Hari Suci Nyepi Saka 1949' },
+    { title: 'Kenaikan Yesus Kristus', startDate: '2027-05-06', endDate: '2027-05-06', description: 'Kenaikan Yesus Kristus' },
+    { title: 'Hari Raya Idul Adha 1448 H', startDate: '2027-05-16', endDate: '2027-05-16', description: 'Hari Raya Idul Adha 1448 H' },
+    { title: 'Hari Raya Waisak 2571 BE', startDate: '2027-05-20', endDate: '2027-05-20', description: 'Hari Raya Tri Suci Waisak' },
+    { title: 'Tahun Baru Islam 1449 H', startDate: '2027-06-06', endDate: '2027-06-06', description: '1 Muharram 1449 H' },
+    { title: 'Maulid Nabi Muhammad SAW', startDate: '2027-08-15', endDate: '2027-08-15', description: 'Peringatan Maulid Nabi Muhammad SAW' },
+  ],
+  2028: [
+    { title: 'Isra Mikraj Nabi Muhammad SAW', startDate: '2028-01-25', endDate: '2028-01-25', description: 'Hari Besar Keagamaan Islam' },
+    { title: 'Tahun Baru Imlek 2579 Kongzili', startDate: '2028-01-26', endDate: '2028-01-26', description: 'Tahun Baru Imlek 2579' },
+    { title: 'Hari Raya Idul Fitri 1449 H', startDate: '2028-02-27', endDate: '2028-02-28', description: 'Libur Nasional Idul Fitri 1449 H' },
+    { title: 'Hari Suci Nyepi (Tahun Baru Saka 1950)', startDate: '2028-03-26', endDate: '2028-03-26', description: 'Hari Suci Nyepi Saka 1950' },
+    { title: 'Wafat Yesus Kristus', startDate: '2028-04-14', endDate: '2028-04-14', description: 'Jumat Agung Wafat Yesus Kristus' },
+    { title: 'Hari Raya Idul Adha 1449 H', startDate: '2028-05-05', endDate: '2028-05-05', description: 'Hari Raya Idul Adha 1449 H' },
+    { title: 'Hari Raya Waisak 2572 BE', startDate: '2028-05-09', endDate: '2028-05-09', description: 'Hari Raya Tri Suci Waisak' },
+    { title: 'Tahun Baru Islam 1450 H', startDate: '2028-05-25', endDate: '2028-05-25', description: '1 Muharram 1450 H' },
+    { title: 'Kenaikan Yesus Kristus', startDate: '2028-05-25', endDate: '2028-05-25', description: 'Kenaikan Yesus Kristus' },
+    { title: 'Maulid Nabi Muhammad SAW', startDate: '2028-08-03', endDate: '2028-08-03', description: 'Peringatan Maulid Nabi Muhammad SAW' },
+  ]
+};
+
+// Generates accurate national holidays for an academic year (e.g. 2024/2025)
+export function getHolidaysForAcademicYear(
+  academicYearStr: string,
+  sem1Start?: string,
+  sem2End?: string
+): KaldikEvent[] {
+  const match = academicYearStr.match(/(\d{4})[^\d]+(\d{4})/);
+  let startYear = 2024;
+  let endYear = 2025;
+
+  if (match) {
+    startYear = parseInt(match[1], 10);
+    endYear = parseInt(match[2], 10);
+  } else {
+    const singleYear = parseInt(academicYearStr.replace(/\D/g, ''), 10);
+    if (!isNaN(singleYear) && singleYear >= 2000 && singleYear <= 2100) {
+      startYear = singleYear;
+      endYear = singleYear + 1;
+    }
+  }
+
+  // Academic year default range
+  const rangeStart = sem1Start || `${startYear}-07-01`;
+  const rangeEnd = sem2End || `${endYear}-06-30`;
+
+  const allCandidates: HolidayDefinition[] = [];
+
+  // Year 1 (July - December)
+  allCandidates.push(...getFixedHolidays(startYear));
+  if (VARIABLE_HOLIDAYS_BY_YEAR[startYear]) {
+    allCandidates.push(...VARIABLE_HOLIDAYS_BY_YEAR[startYear]);
+  }
+
+  // Year 2 (January - June)
+  allCandidates.push(...getFixedHolidays(endYear));
+  if (VARIABLE_HOLIDAYS_BY_YEAR[endYear]) {
+    allCandidates.push(...VARIABLE_HOLIDAYS_BY_YEAR[endYear]);
+  }
+
+  // Filter within academic year boundaries
+  const filtered = allCandidates.filter(h => {
+    return h.startDate >= rangeStart && h.startDate <= rangeEnd;
+  });
+
+  // Sort chronologically
+  filtered.sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+  return filtered.map((h, idx) => ({
+    id: `ev-hol-${startYear}-${endYear}-${idx + 1}`,
+    title: h.title,
+    category: 'holiday',
+    startDate: h.startDate,
+    endDate: h.endDate,
+    description: h.description,
+    isDemo: false
+  }));
+}
+
+// Robust Excel date parsing helper
+export function parseExcelDate(val: any): string {
+  if (!val) return '';
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return '';
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  if (typeof val === 'number') {
+    // Excel serial date code
+    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+  }
+  const str = String(val).trim();
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(str)) {
+    const [y, m, d] = str.split('-');
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+  const dmyMatch = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (dmyMatch) {
+    const [, d, m, y] = dmyMatch;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return '';
+}
+
+// Flexible header field finder
+export function getFieldVal(row: Record<string, any>, possibleKeys: string[]): string {
+  const rowKeys = Object.keys(row);
+  for (const targetKey of possibleKeys) {
+    const foundKey = rowKeys.find(k =>
+      k.toLowerCase().replace(/[^a-z0-9]/g, '').includes(targetKey.toLowerCase().replace(/[^a-z0-9]/g, ''))
+    );
+    if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) {
+      return String(row[foundKey]).trim();
+    }
+  }
+  return '';
+}
+
+// Initial Demo Events
 const DEMO_EVENTS: KaldikEvent[] = [
-  // Hari Libur Nasional
-  { id: 'ev-1', title: 'HUT Kemerdekaan RI ke-79', category: 'holiday', startDate: '2024-08-17', endDate: '2024-08-17', description: 'Libur Nasional Kemerdekaan Indonesia', isDemo: true },
-  { id: 'ev-2', title: 'Maulid Nabi Muhammad SAW', category: 'holiday', startDate: '2024-09-16', endDate: '2024-09-16', description: 'Libur Nasional Keagamaan', isDemo: true },
-  { id: 'ev-3', title: 'Hari Raya Natal', category: 'holiday', startDate: '2024-12-25', endDate: '2024-12-25', description: 'Libur Nasional Natal', isDemo: true },
-  { id: 'ev-4', title: 'Tahun Baru 2025 Masehi', category: 'holiday', startDate: '2025-01-01', endDate: '2025-01-01', description: 'Tahun Baru Masehi', isDemo: true },
-  { id: 'ev-5', title: 'Isra Mikraj Nabi Muhammad SAW', category: 'holiday', startDate: '2025-01-27', endDate: '2025-01-27', description: 'Libur Nasional Keagamaan', isDemo: true },
-  { id: 'ev-6', title: 'Tahun Baru Imlek 2576', category: 'holiday', startDate: '2025-01-29', endDate: '2025-01-29', description: 'Libur Imlek', isDemo: true },
-  { id: 'ev-7', title: 'Hari Raya Nyepi 1947 Saka', category: 'holiday', startDate: '2025-03-29', endDate: '2025-03-29', description: 'Libur Nyepi', isDemo: true },
-  { id: 'ev-8', title: 'Hari Raya Idul Fitri 1446 H', category: 'holiday', startDate: '2025-03-31', endDate: '2025-04-01', description: 'Libur Idul Fitri', isDemo: true },
-  { id: 'ev-9', title: 'Hari Buruh Internasional', category: 'holiday', startDate: '2025-05-01', endDate: '2025-05-01', description: 'May Day', isDemo: true },
-  { id: 'ev-10', title: 'Hari Raya Waisak 2569', category: 'holiday', startDate: '2025-05-12', endDate: '2025-05-12', description: 'Libur Waisak', isDemo: true },
-  { id: 'ev-11', title: 'Kenaikan Isa Almasih', category: 'holiday', startDate: '2025-05-29', endDate: '2025-05-29', description: 'Libur Keagamaan', isDemo: true },
-  { id: 'ev-12', title: 'Hari Lahir Pancasila', category: 'holiday', startDate: '2025-06-01', endDate: '2025-06-01', description: 'Hari Pancasila', isDemo: true },
-  { id: 'ev-13', title: 'Hari Raya Idul Adha 1446 H', category: 'holiday', startDate: '2025-06-07', endDate: '2025-06-07', description: 'Idul Adha', isDemo: true },
+  // Holidays for 2024/2025 automatically fetched
+  ...getHolidaysForAcademicYear('2024/2025', '2024-07-15', '2025-06-20'),
 
   // Agenda Sekolah
   { id: 'ev-14', title: 'Masa Pengenalan Lingkungan Sekolah (MPLS)', category: 'school', startDate: '2024-07-15', endDate: '2024-07-17', time: '07:30 - 11:30', location: 'Lapangan Sekolah', pic: 'Wakasek Kesiswaan', description: 'Pengenalan lingkungan bagi siswa baru SD', isNonEffective: true, isDemo: true },
@@ -580,6 +777,264 @@ export default function App() {
     }
   };
 
+  // Synchronize national holidays according to active academic year
+  const syncNationalHolidays = (showToastNotice = true) => {
+    const newHolidays = getHolidaysForAcademicYear(
+      appData.settings.academicYear,
+      appData.settings.sem1Start,
+      appData.settings.sem2End
+    );
+
+    setAppData(prev => {
+      const nonHolidayEvents = prev.events.filter(e => e.category !== 'holiday');
+      return {
+        ...prev,
+        events: [...nonHolidayEvents, ...newHolidays]
+      };
+    });
+
+    if (showToastNotice) {
+      showToast(`Libur Nasional berhasil disesuaikan untuk TP ${appData.settings.academicYear} (${newHolidays.length} hari libur resmi)`, 'success');
+    }
+  };
+
+  // Download Category Excel Template
+  const downloadCategoryExcelTemplate = (catKey: CategoryKey) => {
+    let title = '';
+    let headers: string[] = [];
+    let sampleRows: (string | number)[][] = [];
+    let colWidths: { wch: number }[] = [];
+
+    if (catKey === 'school') {
+      title = 'TEMPLATE IMPORT AGENDA & KEGIATAN SEKOLAH';
+      headers = [
+        'Nama Kegiatan',
+        'Tanggal Mulai',
+        'Tanggal Selesai',
+        'Waktu',
+        'Tempat',
+        'PIC / Penanggung Jawab',
+        'Status Hari Efektif',
+        'Keterangan'
+      ];
+      sampleRows = [
+        [
+          'Masa Pengenalan Lingkungan Sekolah (MPLS)',
+          '2024-07-15',
+          '2024-07-17',
+          '07:30 - 11:30',
+          'Lapangan Sekolah',
+          'Wakasek Kesiswaan',
+          'Tidak Efektif',
+          'Kegiatan orientasi lingkungan siswa baru'
+        ],
+        [
+          'Asesmen Sumatif Akhir Semester 1 (SAS)',
+          '2024-12-02',
+          '2024-12-07',
+          '07:30 - 11:00',
+          'Ruang Kelas 1-6',
+          'Panitia Asesmen',
+          'Efektif',
+          'Penilaian hasil belajar semester ganjil'
+        ],
+        [
+          'Pembagian Rapor Semester 1',
+          '2024-12-19',
+          '2024-12-19',
+          '08:00 - 11:30',
+          'Kelas Masing-masing',
+          'Wali Kelas',
+          'Efektif',
+          'Penyerahan buku laporan hasil belajar'
+        ]
+      ];
+      colWidths = [{ wch: 35 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 22 }, { wch: 25 }, { wch: 20 }, { wch: 40 }];
+    } else if (catKey === 'teacher') {
+      title = 'TEMPLATE IMPORT AGENDA GURU & TENAGA KEPENDIDIKAN';
+      headers = [
+        'Nama Kegiatan',
+        'Tanggal Mulai',
+        'Tanggal Selesai',
+        'Waktu',
+        'Tempat',
+        'Peserta / PIC',
+        'Keterangan'
+      ];
+      sampleRows = [
+        [
+          'Rapat Pleno Kerja Awal Tahun Pelajaran',
+          '2024-07-12',
+          '2024-07-12',
+          '08:00 - 14:00',
+          'Ruang Guru',
+          'Kepala Sekolah & Seluruh Guru',
+          'Penyusunan KSP dan pembagian beban mengajar'
+        ],
+        [
+          'Workshop Komunitas Belajar (Kombel) PMM',
+          '2024-08-14',
+          '2024-08-14',
+          '13:00 - 15:30',
+          'Ruang Multimedia',
+          'Ketua Kombel & Guru Kelas',
+          'Pelatihan pembelajaran berdiferensiasi'
+        ],
+        [
+          'KKG Mini: Bedah Kisi-kisi Asesmen HOTS',
+          '2024-10-10',
+          '2024-10-10',
+          '09:00 - 12:00',
+          'Aula Sekolah',
+          'Guru Kelas 1 - 6',
+          'Penyusunan instrumen soal evaluasi'
+        ]
+      ];
+      colWidths = [{ wch: 35 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 22 }, { wch: 30 }, { wch: 40 }];
+    } else if (catKey === 'important') {
+      title = 'TEMPLATE IMPORT PERISTIWA PENTING & PERINGATAN';
+      headers = [
+        'Nama Peristiwa / Peringatan',
+        'Tanggal Mulai',
+        'Tanggal Selesai',
+        'Keterangan'
+      ];
+      sampleRows = [
+        [
+          'Hari Anak Nasional',
+          '2024-07-23',
+          '2024-07-23',
+          'Peringatan kreasi bakat siswa di sekolah'
+        ],
+        [
+          'Hari Pramuka ke-63',
+          '2024-08-14',
+          '2024-08-14',
+          'Upacara bendera seragam pramuka lengkap'
+        ],
+        [
+          'Hari Batik Nasional',
+          '2024-10-02',
+          '2024-10-02',
+          'Seluruh warga sekolah mengenakan batik nusantara'
+        ],
+        [
+          'Hari Guru Nasional (HGN) & HUT PGRI',
+          '2024-11-25',
+          '2024-11-25',
+          'Upacara bendera dan apresiasi dedikasi guru'
+        ]
+      ];
+      colWidths = [{ wch: 35 }, { wch: 15 }, { wch: 15 }, { wch: 45 }];
+    } else {
+      title = 'TEMPLATE IMPORT HARI LIBUR NASIONAL';
+      headers = ['Nama Hari Libur', 'Tanggal Mulai', 'Tanggal Selesai', 'Keterangan'];
+      sampleRows = [['Tahun Baru Masehi', '2025-01-01', '2025-01-01', 'Libur Resmi Tahun Baru']];
+      colWidths = [{ wch: 35 }, { wch: 15 }, { wch: 15 }, { wch: 35 }];
+    }
+
+    const aoaData: any[][] = [
+      [title],
+      [`Tahun Pelajaran: ${appData.settings.academicYear}`],
+      ['PETUNJUK: Masukkan data kegiatan mulai dari baris ke-5. Format tanggal: YYYY-MM-DD (contoh: 2024-08-17) atau DD/MM/YYYY.'],
+      [],
+      headers,
+      ...sampleRows
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(aoaData);
+    ws['!cols'] = colWidths;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+
+    const fileName = `Template_${CATEGORIES[catKey].name.replace(/\s+/g, '_')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    showToast(`Template Excel untuk ${CATEGORIES[catKey].name} berhasil diunduh!`, 'success');
+  };
+
+  // Upload and Import Category Excel File
+  const handleCategoryExcelUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    catKey: CategoryKey
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      showToast('Membaca dan memproses file Excel...', 'info');
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: 'array', cellDates: true });
+      const sheetName = wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetName];
+
+      const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '', raw: false });
+
+      if (rawRows.length === 0) {
+        showToast('File Excel kosong atau tidak memiliki baris data yang valid', 'error');
+        return;
+      }
+
+      const importedEvents: KaldikEvent[] = [];
+
+      rawRows.forEach((row, index) => {
+        // Find title
+        const title = getFieldVal(row, ['kegiatan', 'agenda', 'peristiwa', 'peringatan', 'nama', 'judul', 'title', 'event']);
+        if (!title || title.startsWith('PETUNJUK') || title.startsWith('TEMPLATE')) return;
+
+        // Find start date
+        const startRaw = getFieldVal(row, ['mulai', 'start', 'tanggal', 'tgl', 'date']);
+        const startDate = parseExcelDate(startRaw) || getLocalDateString();
+
+        // Find end date
+        const endRaw = getFieldVal(row, ['selesai', 'end', 'akhir', 'sampai']);
+        let endDate = parseExcelDate(endRaw);
+        if (!endDate || endDate < startDate) {
+          endDate = startDate;
+        }
+
+        // Optional fields
+        const time = getFieldVal(row, ['waktu', 'jam', 'time', 'pukul']);
+        const location = getFieldVal(row, ['tempat', 'lokasi', 'ruang', 'location']);
+        const pic = getFieldVal(row, ['pic', 'penanggung', 'peserta', 'guru', 'panitia']);
+        const description = getFieldVal(row, ['keterangan', 'catatan', 'deskripsi', 'desc']);
+        
+        const effectiveRaw = getFieldVal(row, ['efektif', 'status', 'heb']).toLowerCase();
+        const isNonEffective = effectiveRaw.includes('tidak') || effectiveRaw.includes('non') || effectiveRaw.includes('libur');
+
+        importedEvents.push({
+          id: `ev-imp-${catKey}-${Date.now()}-${index + 1}`,
+          category: catKey,
+          title,
+          startDate,
+          endDate,
+          time: time || undefined,
+          location: location || undefined,
+          pic: pic || undefined,
+          description: description || undefined,
+          isNonEffective: catKey === 'school' ? isNonEffective : false,
+          isDemo: false
+        });
+      });
+
+      if (importedEvents.length === 0) {
+        showToast('Tidak ada kegiatan yang berhasil dibaca. Pastikan kolom sesuai template!', 'error');
+        return;
+      }
+
+      setAppData(prev => ({
+        ...prev,
+        events: [...prev.events, ...importedEvents]
+      }));
+
+      showToast(`Berhasil mengimpor ${importedEvents.length} kegiatan ke ${CATEGORIES[catKey].name}!`, 'success');
+    } catch (err) {
+      console.error('Error importing Excel:', err);
+      showToast('Gagal membaca file Excel. Pastikan file berformat .xlsx atau .xls yang benar.', 'error');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
   // Excel Export
   const exportRekapExcel = () => {
     const rows: (string | number)[][] = [
@@ -952,7 +1407,7 @@ export default function App() {
 
     return (
       <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2">
               <span className={`w-3 h-3 rounded-full ${CATEGORIES[catKey].bgClass}`}></span>
@@ -962,25 +1417,72 @@ export default function App() {
                 {catKey === 'teacher' && 'Agenda Guru & Tenaga Kependidikan'}
                 {catKey === 'important' && 'Peristiwa Penting & Peringatan'}
               </h3>
+              {catKey === 'holiday' && (
+                <span className="text-[11px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">
+                  TP {appData.settings.academicYear}
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              {catKey === 'holiday' && 'Pengelolaan data libur resmi nasional untuk kalender pendidikan'}
-              {catKey === 'school' && 'Kegiatan akademik, ujian, pembagian rapor, dan libur semester'}
-              {catKey === 'teacher' && 'Rapat dinas, workshop, KKG/MGMP, dan pengembangan profesionalisme'}
-              {catKey === 'important' && 'Hari Besar Nasional, Peringatan Pendidikan, dan momentum penting sekolah'}
+              {catKey === 'holiday' && 'Disesuaikan otomatis dengan libur resmi SKB 3 Menteri sesuai tahun pelajaran yang digunakan'}
+              {catKey === 'school' && 'Kegiatan akademik, ujian, pembagian rapor, dan libur semester (tersedia import Excel)'}
+              {catKey === 'teacher' && 'Rapat dinas, workshop, KKG/MGMP, dan pelatihan guru (tersedia import Excel)'}
+              {catKey === 'important' && 'Hari Besar Nasional, Peringatan Pendidikan & momentum penting (tersedia import Excel)'}
             </p>
           </div>
-          <button
-            onClick={() => openAddAgendaModal(catKey)}
-            className={`text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition ${
-              catKey === 'holiday' ? 'bg-rose-600 hover:bg-rose-700' :
-              catKey === 'school' ? 'bg-sky-600 hover:bg-sky-700' :
-              catKey === 'teacher' ? 'bg-purple-600 hover:bg-purple-700' :
-              'bg-amber-600 hover:bg-amber-700'
-            }`}
-          >
-            <i className="fa-solid fa-plus"></i> Tambah {CATEGORIES[catKey].name}
-          </button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {catKey === 'holiday' ? (
+              <button
+                onClick={() => syncNationalHolidays(true)}
+                className="bg-rose-700 hover:bg-rose-800 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition cursor-pointer"
+                title="Sesuaikan otomatis hari libur nasional sesuai Tahun Pelajaran aktif"
+              >
+                <i className="fa-solid fa-arrows-rotate"></i>
+                <span>Sinkronkan Libur Otomatis ({appData.settings.academicYear})</span>
+              </button>
+            ) : (
+              <>
+                {/* Download Template Excel */}
+                <button
+                  onClick={() => downloadCategoryExcelTemplate(catKey)}
+                  className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+                  title={`Unduh template file Excel untuk ${CATEGORIES[catKey].name}`}
+                >
+                  <i className="fa-solid fa-file-arrow-down text-emerald-600"></i>
+                  <span>Unduh Template Excel</span>
+                </button>
+
+                {/* Upload Excel */}
+                <label
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+                  title={`Unggah file Excel untuk menambah kegiatan ${CATEGORIES[catKey].name}`}
+                >
+                  <i className="fa-solid fa-file-arrow-up"></i>
+                  <span>Upload Excel</span>
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={e => handleCategoryExcelUpload(e, catKey)}
+                    className="hidden"
+                  />
+                </label>
+              </>
+            )}
+
+            {/* Manual Add Button */}
+            <button
+              onClick={() => openAddAgendaModal(catKey)}
+              className={`text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition cursor-pointer ${
+                catKey === 'holiday' ? 'bg-rose-600 hover:bg-rose-700' :
+                catKey === 'school' ? 'bg-sky-600 hover:bg-sky-700' :
+                catKey === 'teacher' ? 'bg-purple-600 hover:bg-purple-700' :
+                'bg-amber-600 hover:bg-amber-700'
+              }`}
+            >
+              <i className="fa-solid fa-plus"></i> Tambah {CATEGORIES[catKey].name}
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto border border-slate-200 rounded-xl">
@@ -2018,7 +2520,20 @@ export default function App() {
               <form
                 onSubmit={e => {
                   e.preventDefault();
-                  showToast('Pengaturan sekolah & pengembang berhasil disimpan!', 'success');
+                  // Automatically synchronize national holidays for the selected academic year
+                  const updatedHolidays = getHolidaysForAcademicYear(
+                    appData.settings.academicYear,
+                    appData.settings.sem1Start,
+                    appData.settings.sem2End
+                  );
+                  setAppData(prev => {
+                    const otherEvents = prev.events.filter(ev => ev.category !== 'holiday');
+                    return {
+                      ...prev,
+                      events: [...otherEvents, ...updatedHolidays]
+                    };
+                  });
+                  showToast(`Pengaturan disimpan & Libur Nasional disesuaikan otomatis untuk TP ${appData.settings.academicYear}!`, 'success');
                 }}
                 className="space-y-6 max-w-4xl"
               >
@@ -2180,7 +2695,17 @@ export default function App() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Tahun Pelajaran</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-semibold text-slate-700">Tahun Pelajaran</label>
+                        <button
+                          type="button"
+                          onClick={() => syncNationalHolidays(true)}
+                          className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer"
+                          title="Sinkronkan Libur Nasional untuk Tahun Pelajaran ini"
+                        >
+                          <i className="fa-solid fa-arrows-rotate"></i> Sinkron Libur
+                        </button>
+                      </div>
                       <input
                         type="text"
                         required
@@ -2192,6 +2717,7 @@ export default function App() {
                         placeholder="Contoh: 2024/2025"
                         className="w-full p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 bg-white"
                       />
+                      <p className="text-[10px] text-slate-400 mt-1">Libur nasional otomatis disesuaikan sesuai tahun ini</p>
                     </div>
                     <div>
                       <label className="block font-semibold text-slate-700 mb-1">Mulai Semester 1</label>
