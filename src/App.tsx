@@ -448,7 +448,94 @@ export default function App() {
   // UI Navigation State
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [activeSemester, setActiveSemester] = useState<1 | 2>(1);
-  const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(new Date(2024, 6, 1));
+
+  // Derived academic year boundaries strictly following appData.settings
+  const tpYears = useMemo(() => {
+    let startYear = 2024;
+    let endYear = 2025;
+
+    const match = appData.settings.academicYear.match(/(\d{4})[^\d]+(\d{4})/);
+    if (match) {
+      startYear = parseInt(match[1], 10);
+      endYear = parseInt(match[2], 10);
+    } else {
+      const single = appData.settings.academicYear.match(/(\d{4})/);
+      if (single) {
+        startYear = parseInt(single[1], 10);
+        endYear = startYear + 1;
+      }
+    }
+
+    if (appData.settings.sem1Start) {
+      const s1 = new Date(appData.settings.sem1Start);
+      if (!isNaN(s1.getFullYear()) && s1.getFullYear() >= 2000 && s1.getFullYear() <= 2100) {
+        startYear = s1.getFullYear();
+      }
+    }
+
+    if (appData.settings.sem2End) {
+      const s2 = new Date(appData.settings.sem2End);
+      if (!isNaN(s2.getFullYear()) && s2.getFullYear() >= 2000 && s2.getFullYear() <= 2100) {
+        endYear = s2.getFullYear();
+      }
+    } else if (appData.settings.sem2Start) {
+      const s2 = new Date(appData.settings.sem2Start);
+      if (!isNaN(s2.getFullYear()) && s2.getFullYear() >= 2000 && s2.getFullYear() <= 2100) {
+        endYear = s2.getFullYear();
+      }
+    }
+
+    if (endYear <= startYear) {
+      endYear = startYear + 1;
+    }
+
+    return { startYear, endYear };
+  }, [appData.settings.academicYear, appData.settings.sem1Start, appData.settings.sem2Start, appData.settings.sem2End]);
+
+  // Calendar date initialized to the start year of configured TP
+  const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(() => {
+    const s1 = new Date(appData.settings.sem1Start);
+    if (!isNaN(s1.getFullYear()) && s1.getFullYear() >= 2000) {
+      return new Date(s1.getFullYear(), s1.getMonth() || 6, 1);
+    }
+    const match = appData.settings.academicYear.match(/(\d{4})/);
+    const yr = match ? parseInt(match[1], 10) : 2024;
+    return new Date(yr, 6, 1);
+  });
+
+  // Ensure currentCalendarDate stays aligned when academic year settings change
+  useEffect(() => {
+    const curY = currentCalendarDate.getFullYear();
+    const curM = currentCalendarDate.getMonth();
+    const inTP =
+      (curY === tpYears.startYear && curM >= 6) ||
+      (curY === tpYears.endYear && curM <= 5);
+
+    if (!inTP) {
+      if (activeSemester === 1) {
+        setCurrentCalendarDate(new Date(tpYears.startYear, 6, 1));
+      } else {
+        setCurrentCalendarDate(new Date(tpYears.endYear, 0, 1));
+      }
+    }
+  }, [tpYears.startYear, tpYears.endYear, activeSemester]);
+
+  // 12 Months of the configured Academic Year
+  const tpMonths = useMemo(() => [
+    { year: tpYears.startYear, month: 6, label: `Juli ${tpYears.startYear}` },
+    { year: tpYears.startYear, month: 7, label: `Agustus ${tpYears.startYear}` },
+    { year: tpYears.startYear, month: 8, label: `September ${tpYears.startYear}` },
+    { year: tpYears.startYear, month: 9, label: `Oktober ${tpYears.startYear}` },
+    { year: tpYears.startYear, month: 10, label: `November ${tpYears.startYear}` },
+    { year: tpYears.startYear, month: 11, label: `Desember ${tpYears.startYear}` },
+    { year: tpYears.endYear, month: 0, label: `Januari ${tpYears.endYear}` },
+    { year: tpYears.endYear, month: 1, label: `Februari ${tpYears.endYear}` },
+    { year: tpYears.endYear, month: 2, label: `Maret ${tpYears.endYear}` },
+    { year: tpYears.endYear, month: 3, label: `April ${tpYears.endYear}` },
+    { year: tpYears.endYear, month: 4, label: `Mei ${tpYears.endYear}` },
+    { year: tpYears.endYear, month: 5, label: `Juni ${tpYears.endYear}` },
+  ], [tpYears.startYear, tpYears.endYear]);
+
   const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'semester'>('month');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
@@ -602,12 +689,9 @@ export default function App() {
   };
 
   const calculateSemesterHEB = (semesterNum: 1 | 2) => {
-    const semStart = semesterNum === 1 ? appData.settings.sem1Start : appData.settings.sem2Start;
-    const startYear = new Date(semStart).getFullYear() || 2024;
-
     const months = semesterNum === 1
-      ? [6, 7, 8, 9, 10, 11].map(m => ({ year: startYear, month: m }))
-      : [0, 1, 2, 3, 4, 5].map(m => ({ year: startYear + 1, month: m }));
+      ? [6, 7, 8, 9, 10, 11].map(m => ({ year: tpYears.startYear, month: m }))
+      : [0, 1, 2, 3, 4, 5].map(m => ({ year: tpYears.endYear, month: m }));
 
     let totalHEB = 0;
     const monthlyBreakdown = months.map(m => {
@@ -619,8 +703,8 @@ export default function App() {
     return { semesterNum, totalHEB, monthlyBreakdown };
   };
 
-  const sem1HEB = useMemo(() => calculateSemesterHEB(1), [appData]);
-  const sem2HEB = useMemo(() => calculateSemesterHEB(2), [appData]);
+  const sem1HEB = useMemo(() => calculateSemesterHEB(1), [appData, tpYears]);
+  const sem2HEB = useMemo(() => calculateSemesterHEB(2), [appData, tpYears]);
   const activeSemesterHEB = activeSemester === 1 ? sem1HEB : sem2HEB;
 
   // Navigate calendar month
@@ -721,6 +805,31 @@ export default function App() {
           events: prev.events.filter(e => e.id !== id)
         }));
         showToast('Agenda berhasil dihapus', 'info');
+        setConfirmModal(c => ({ ...c, open: false }));
+      }
+    });
+  };
+
+  // Reset / Empty all data in a specific category (Agenda Sekolah, Agenda Guru, Peristiwa Penting)
+  const handleResetCategoryData = (catKey: CategoryKey) => {
+    const count = appData.events.filter(e => e.category === catKey).length;
+    const categoryName = CATEGORIES[catKey]?.name || catKey;
+
+    if (count === 0) {
+      showToast(`Data ${categoryName} sudah kosong.`, 'info');
+      return;
+    }
+
+    setConfirmModal({
+      open: true,
+      title: `Kosongkan Seluruh Data ${categoryName}`,
+      message: `PERINGATAN: Apakah Anda yakin ingin mereset dan menghapus SEMUA kegiatan pada "${categoryName}" (${count} data kegiatan)? Tindakan ini akan mengosongkan kategori ini dan tidak dapat dibatalkan.`,
+      onConfirm: () => {
+        setAppData(prev => ({
+          ...prev,
+          events: prev.events.filter(e => e.category !== catKey)
+        }));
+        showToast(`Seluruh data ${categoryName} (${count} kegiatan) berhasil dikosongkan.`, 'success');
         setConfirmModal(c => ({ ...c, open: false }));
       }
     });
@@ -1467,6 +1576,17 @@ export default function App() {
                     className="hidden"
                   />
                 </label>
+
+                {/* Reset Data (Kosongkan Data) */}
+                <button
+                  type="button"
+                  onClick={() => handleResetCategoryData(catKey)}
+                  className="bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-rose-200 hover:border-rose-300 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+                  title={`Kosongkan / hapus seluruh kegiatan ${CATEGORIES[catKey].name}`}
+                >
+                  <i className="fa-solid fa-trash-can"></i>
+                  <span>Reset Data</span>
+                </button>
               </>
             )}
 
@@ -1788,28 +1908,28 @@ export default function App() {
               <button
                 onClick={() => {
                   setActiveSemester(1);
-                  const d = new Date(appData.settings.sem1Start);
-                  setCurrentCalendarDate(new Date(d.getFullYear() || 2024, d.getMonth() || 6, 1));
-                  showToast('Semester 1 (Ganjil) diaktifkan', 'info');
+                  setCurrentCalendarDate(new Date(tpYears.startYear, 6, 1));
+                  showToast(`Semester 1 (Ganjil ${tpYears.startYear}) diaktifkan`, 'info');
                 }}
-                className={`px-3 py-1.5 rounded-md transition-all font-semibold ${
+                className={`px-3 py-1.5 rounded-md transition-all font-semibold cursor-pointer ${
                   activeSemester === 1 ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
+                title={`Semester 1 (${tpYears.startYear})`}
               >
-                Sem 1 (Ganjil)
+                Sem 1 ({tpYears.startYear})
               </button>
               <button
                 onClick={() => {
                   setActiveSemester(2);
-                  const d = new Date(appData.settings.sem2Start);
-                  setCurrentCalendarDate(new Date(d.getFullYear() || 2025, d.getMonth() || 0, 1));
-                  showToast('Semester 2 (Genap) diaktifkan', 'info');
+                  setCurrentCalendarDate(new Date(tpYears.endYear, 0, 1));
+                  showToast(`Semester 2 (Genap ${tpYears.endYear}) diaktifkan`, 'info');
                 }}
-                className={`px-3 py-1.5 rounded-md transition-all font-semibold ${
+                className={`px-3 py-1.5 rounded-md transition-all font-semibold cursor-pointer ${
                   activeSemester === 2 ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
+                title={`Semester 2 (${tpYears.endYear})`}
               >
-                Sem 2 (Genap)
+                Sem 2 ({tpYears.endYear})
               </button>
             </div>
 
@@ -1974,26 +2094,46 @@ export default function App() {
                       <h3 className="text-lg font-bold text-slate-800">
                         {getMonthNameIndo(currentCalendarDate.getMonth())} {currentCalendarDate.getFullYear()}
                       </h3>
-                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
-                        {currentCalendarDate.getMonth() >= 6 ? 'Semester 1 (Ganjil)' : 'Semester 2 (Genap)'}
+                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
+                        currentCalendarDate.getMonth() >= 6
+                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      }`}>
+                        {currentCalendarDate.getMonth() >= 6 ? `Sem 1 (${tpYears.startYear})` : `Sem 2 (${tpYears.endYear})`}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold hidden md:inline">
+                        TP {appData.settings.academicYear}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => navigateMonth(-1)}
-                        className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition text-xs"
+                        className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition text-xs cursor-pointer"
+                        title="Bulan Sebelumnya"
                       >
                         <i className="fa-solid fa-chevron-left"></i>
                       </button>
                       <button
+                        onClick={() => {
+                          setCurrentCalendarDate(new Date(tpYears.startYear, 6, 1));
+                          setActiveSemester(1);
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition cursor-pointer"
+                        title={`Lompat ke Awal Tahun Pelajaran (Juli ${tpYears.startYear})`}
+                      >
+                        Awal TP
+                      </button>
+                      <button
                         onClick={goToCurrentMonth}
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition"
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition cursor-pointer"
+                        title="Ke Bulan Hari Ini"
                       >
                         Hari Ini
                       </button>
                       <button
                         onClick={() => navigateMonth(1)}
-                        className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition text-xs"
+                        className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition text-xs cursor-pointer"
+                        title="Bulan Berikutnya"
                       >
                         <i className="fa-solid fa-chevron-right"></i>
                       </button>
@@ -2119,13 +2259,20 @@ export default function App() {
             <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800">Kalender Pendidikan Interaktif</h3>
-                  <p className="text-xs text-slate-500">Tampilan penuh per bulan & matriks semester lengkap</p>
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-lg font-bold text-slate-800">Kalender Master Pendidikan</h3>
+                    <span className="text-xs bg-indigo-100 text-indigo-800 font-bold px-2.5 py-0.5 rounded-full border border-indigo-200">
+                      Tahun Pelajaran {appData.settings.academicYear}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Sinkron otomatis dengan Tahun Pelajaran aktif ({tpYears.startYear}/{tpYears.endYear}) sesuai pengaturan sistem
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg text-xs font-medium border border-slate-200">
                   <button
                     onClick={() => setCalendarViewMode('month')}
-                    className={`px-3 py-1.5 rounded-md transition font-semibold ${
+                    className={`px-3 py-1.5 rounded-md transition font-semibold cursor-pointer ${
                       calendarViewMode === 'month' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -2133,7 +2280,7 @@ export default function App() {
                   </button>
                   <button
                     onClick={() => setCalendarViewMode('semester')}
-                    className={`px-3 py-1.5 rounded-md transition ${
+                    className={`px-3 py-1.5 rounded-md transition font-semibold cursor-pointer ${
                       calendarViewMode === 'semester' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -2144,40 +2291,162 @@ export default function App() {
 
               {calendarViewMode === 'month' ? (
                 <div>
-                  <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <button
-                      onClick={() => navigateMonth(-1)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-medium"
-                    >
-                      <i className="fa-solid fa-chevron-left mr-1"></i> Bulan Sebelumnya
-                    </button>
-                    <h3 className="text-base font-bold text-slate-800">
-                      {getMonthNameIndo(currentCalendarDate.getMonth())} {currentCalendarDate.getFullYear()}
-                    </h3>
-                    <button
-                      onClick={() => navigateMonth(1)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-medium"
-                    >
-                      Bulan Berikutnya <i className="fa-solid fa-chevron-right ml-1"></i>
-                    </button>
+                  {/* Calendar Navigation & Academic Year Selector Bar */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => navigateMonth(-1)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-semibold cursor-pointer shadow-sm transition"
+                        title="Bulan Sebelumnya"
+                      >
+                        <i className="fa-solid fa-chevron-left mr-1"></i> Bulan Lalu
+                      </button>
+                      <button
+                        onClick={() => navigateMonth(1)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-semibold cursor-pointer shadow-sm transition"
+                        title="Bulan Berikutnya"
+                      >
+                        Bulan Depan <i className="fa-solid fa-chevron-right ml-1"></i>
+                      </button>
+                    </div>
+
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <h3 className="text-base sm:text-lg font-bold text-slate-800">
+                          {getMonthNameIndo(currentCalendarDate.getMonth())} {currentCalendarDate.getFullYear()}
+                        </h3>
+                        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                          currentCalendarDate.getMonth() >= 6
+                            ? 'bg-indigo-100 text-indigo-800 border-indigo-200'
+                            : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                        }`}>
+                          {currentCalendarDate.getMonth() >= 6 ? `Sem 1 (Ganjil ${tpYears.startYear})` : `Sem 2 (Genap ${tpYears.endYear})`}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-medium mt-0.5">
+                        Tahun Pelajaran {appData.settings.academicYear}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Direct 12-Month Selector of Configured TP */}
+                      <select
+                        value={`${currentCalendarDate.getFullYear()}-${currentCalendarDate.getMonth()}`}
+                        onChange={e => {
+                          const [y, m] = e.target.value.split('-').map(Number);
+                          setCurrentCalendarDate(new Date(y, m, 1));
+                          if (m >= 6 && activeSemester !== 1) setActiveSemester(1);
+                          if (m < 6 && activeSemester !== 2) setActiveSemester(2);
+                        }}
+                        className="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
+                        title="Pilih langsung bulan dalam Tahun Pelajaran ini"
+                      >
+                        <optgroup label={`Semester 1 (${tpYears.startYear})`}>
+                          {tpMonths.filter(m => m.month >= 6).map(m => (
+                            <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`}>
+                              {m.label} (Sem 1)
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label={`Semester 2 (${tpYears.endYear})`}>
+                          {tpMonths.filter(m => m.month < 6).map(m => (
+                            <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`}>
+                              {m.label} (Sem 2)
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+
+                      <button
+                        onClick={() => {
+                          setCurrentCalendarDate(new Date(tpYears.startYear, 6, 1));
+                          setActiveSemester(1);
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-semibold cursor-pointer shadow-sm transition"
+                        title={`Lompat ke Awal Tahun Pelajaran (Juli ${tpYears.startYear})`}
+                      >
+                        Awal TP
+                      </button>
+                      <button
+                        onClick={goToCurrentMonth}
+                        className="px-2.5 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold cursor-pointer shadow-sm transition"
+                        title="Ke Bulan Hari Ini"
+                      >
+                        Hari Ini
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Category Color Legend */}
+                  <div className="flex flex-wrap items-center gap-3 mb-4 text-xs bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                    <span className="font-semibold text-slate-500 text-[11px] mr-1">Keterangan Warna:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                      <span className="text-slate-600">Libur Nasional</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-sky-500 inline-block"></span>
+                      <span className="text-slate-600">Agenda Sekolah</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-purple-500 inline-block"></span>
+                      <span className="text-slate-600">Agenda Guru</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                      <span className="text-slate-600">Peristiwa Penting</span>
+                    </div>
+                  </div>
+
                   {renderCalendarMonthGrid(currentCalendarDate)}
                 </div>
               ) : (
                 <div>
-                  <div className="text-center font-bold text-slate-800 text-sm mb-4 bg-indigo-50 py-2 rounded-lg border border-indigo-100">
-                    Matriks {activeSemester === 1 ? 'Semester 1 (Ganjil): Juli - Desember' : 'Semester 2 (Genap): Januari - Juni'}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 bg-indigo-50 p-3 sm:p-4 rounded-xl border border-indigo-100">
+                    <div>
+                      <div className="font-bold text-slate-800 text-sm">
+                        Matriks 6 Bulan: {activeSemester === 1 ? `Semester 1 (Ganjil): Juli - Desember ${tpYears.startYear}` : `Semester 2 (Genap): Januari - Juni ${tpYears.endYear}`}
+                      </div>
+                      <p className="text-xs text-indigo-700 font-medium mt-0.5">
+                        Tahun Pelajaran {appData.settings.academicYear} | Sesuai Pengaturan Sistem
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-indigo-200 text-xs">
+                      <button
+                        onClick={() => {
+                          setActiveSemester(1);
+                          setCurrentCalendarDate(new Date(tpYears.startYear, 6, 1));
+                        }}
+                        className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${
+                          activeSemester === 1 ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Sem 1 ({tpYears.startYear})
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveSemester(2);
+                          setCurrentCalendarDate(new Date(tpYears.endYear, 0, 1));
+                        }}
+                        className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${
+                          activeSemester === 2 ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Sem 2 ({tpYears.endYear})
+                      </button>
+                    </div>
                   </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {activeSemester === 1
                       ? [6, 7, 8, 9, 10, 11].map(m => (
                           <div key={m}>
-                            {renderMiniCalendar(new Date(appData.settings.sem1Start).getFullYear() || 2024, m)}
+                            {renderMiniCalendar(tpYears.startYear, m)}
                           </div>
                         ))
                       : [0, 1, 2, 3, 4, 5].map(m => (
                           <div key={m}>
-                            {renderMiniCalendar(new Date(appData.settings.sem2Start).getFullYear() || 2025, m)}
+                            {renderMiniCalendar(tpYears.endYear, m)}
                           </div>
                         ))}
                   </div>
@@ -2533,7 +2802,11 @@ export default function App() {
                       events: [...otherEvents, ...updatedHolidays]
                     };
                   });
-                  showToast(`Pengaturan disimpan & Libur Nasional disesuaikan otomatis untuk TP ${appData.settings.academicYear}!`, 'success');
+                  // Sync calendar view to the newly configured academic year
+                  const match = appData.settings.academicYear.match(/(\d{4})/);
+                  const startYr = match ? parseInt(match[1], 10) : (new Date(appData.settings.sem1Start).getFullYear() || 2024);
+                  setCurrentCalendarDate(new Date(startYr, 6, 1));
+                  showToast(`Pengaturan disimpan! Kalender Master & Libur Nasional disesuaikan untuk TP ${appData.settings.academicYear}!`, 'success');
                 }}
                 className="space-y-6 max-w-4xl"
               >
@@ -2717,7 +2990,45 @@ export default function App() {
                         placeholder="Contoh: 2024/2025"
                         className="w-full p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 bg-white"
                       />
-                      <p className="text-[10px] text-slate-400 mt-1">Libur nasional otomatis disesuaikan sesuai tahun ini</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Kalender Master dan Libur Nasional otomatis disesuaikan sesuai tahun ini</p>
+                      
+                      {/* Quick Academic Year Presets */}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span className="text-[11px] text-slate-500 font-medium">Pilihan Cepat TP:</span>
+                        {[
+                          { label: '2024/2025', y1: 2024, y2: 2025 },
+                          { label: '2025/2026', y1: 2025, y2: 2026 },
+                          { label: '2026/2027', y1: 2026, y2: 2027 },
+                          { label: '2027/2028', y1: 2027, y2: 2028 },
+                        ].map(preset => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              setAppData(prev => ({
+                                ...prev,
+                                settings: {
+                                  ...prev.settings,
+                                  academicYear: preset.label,
+                                  sem1Start: `${preset.y1}-07-15`,
+                                  sem1End: `${preset.y1}-12-20`,
+                                  sem2Start: `${preset.y2}-01-05`,
+                                  sem2End: `${preset.y2}-06-20`,
+                                }
+                              }));
+                              setCurrentCalendarDate(new Date(preset.y1, 6, 1));
+                              showToast(`Tahun Pelajaran diset ke ${preset.label}`, 'info');
+                            }}
+                            className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
+                              appData.settings.academicYear === preset.label
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div>
                       <label className="block font-semibold text-slate-700 mb-1">Mulai Semester 1</label>
@@ -3302,7 +3613,7 @@ export default function App() {
                         </div>
                         <div className="grid grid-cols-3 gap-3 mb-4">
                           {[6, 7, 8, 9, 10, 11].map(m => {
-                            const y = new Date(appData.settings.sem1Start).getFullYear() || 2024;
+                            const y = tpYears.startYear;
                             return (
                               <div key={m} className="border border-slate-300 rounded p-1.5 text-[10px]">
                                 <div className="font-bold text-center bg-slate-200 py-0.5 rounded text-slate-900 mb-1">
@@ -3350,7 +3661,7 @@ export default function App() {
                         </div>
                         <div className="grid grid-cols-3 gap-3 mb-4">
                           {[0, 1, 2, 3, 4, 5].map(m => {
-                            const y = new Date(appData.settings.sem2Start).getFullYear() || 2025;
+                            const y = tpYears.endYear;
                             return (
                               <div key={m} className="border border-slate-300 rounded p-1.5 text-[10px]">
                                 <div className="font-bold text-center bg-slate-200 py-0.5 rounded text-slate-900 mb-1">
